@@ -1,0 +1,457 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sect1 id="search-engine"><title>建立搜索引擎</title>
+<para>
+没有全文检索，企业内部的知识管理系统就不能成为成功的系统。构建一个类似 GOOGLE 的全文检索系统的是否要花费巨大呢？看看 <ulink url="http://dir.google.com/alpha/Top/Computers/Software/Internet/Servers/Search/">Google 的搜索引擎软件目录</ulink>吧。
+</para>
+<para>
+我对其中的两个开放源码的搜索引擎进行了测试。htdig 是一个不错的搜索引擎软件，可惜不支持中文的检索；ASPseek 接着走入我的视线，这个软件对中文的支持非常之好，就连CGI的界面、CGI传递参数都和 GOOGLE 非常类似。
+</para>
+<para>
+ASPseek 由三个部分组成：前端的 cgi 程序 s.cgi 提供查询界面和返回查询结果；后端的守护程序 searchd 接收cgi程序的查询请求，执行数据库查询，返回结果；后台数据库的维护则由程序 index 完成。
+</para>
+<para>
+相关链接：
+</para>
+
+<itemizedlist>
+<listitem>
+<para>
+Google的搜索引擎软件目录
+</para>
+<para>
+参见：<ulink url="http://dir.google.com/alpha/Top/Computers/Software/Internet/Servers/Search/">http://dir.google.com/alpha/Top/Computers/Software/Internet/Servers/Search/</ulink>
+</para>
+</listitem>
+<listitem>
+<para>
+另一个搜索引擎软件目录：
+</para>
+<para>
+Search Tools for Web Sites and Intranets ：<ulink url="http://www.searchtools.com/tools/tools.html">http://www.searchtools.com/tools/tools.html</ulink>
+</para>
+</listitem>
+<listitem>
+<para>
+ASPseek 网站
+</para>
+<para>
+ASPseek.org：<ulink url="http://www.aspseek.org/">http://www.aspseek.org/</ulink>
+</para>
+</listitem>
+<listitem>
+<para>
+ASPseek论坛
+</para>
+<para>
+关于ASPseek的求助信息，可以访问ASPseek论坛：<ulink url="http://forum.aspseek.org/">http://forum.aspseek.org/</ulink>。
+</para>
+</listitem>
+</itemizedlist>
+
+<sect2 id="aspseek-install"><title>安装 ASPSeek</title>
+<para>
+ASPseek 安装过程比较简单，需要注意的是 ASPseek 的安装和运行需要先安装和配置 MySQL。下面是一般的安装过程（假设MySQL已经正确的安装在路径 /usr/local/mysql/ 下）：
+</para>
+<screen>
+root&gt; tar zxvf aspseek-1.2.10.tar.gz
+root&gt; cd aspseek-1.2.10
+root&gt; ./configure --with-mysql=/usr/local/mysql --prefix=/usr/local/aspseek <co id="co.aspseek.configure"/>
+root&gt; make &amp;&amp; make install
+root&gt; /usr/local/aspseek/sbin/aspseek-mysql-postinstall <co id="co.aspseek.create.db"/>
+root&gt; cp /usr/local/aspseek/bin/s.cgi &lt;WWWROOT&gt;/cgi-bin/ <co id="co.aspseek.cgibin"/>
+root&gt; useadd aspseek <co id="co.aspseek.create.usr"/>
+root&gt; su - aspseek
+aspseek&gt; /usr/local/aspseek/sbin/index  <co id="co.aspseek.index"/>
+aspseek&gt; /usr/local/aspseek/sbin/searchd -D  <co id="co.aspseek.searchd"/>
+</screen>
+<calloutlist>
+<callout arearefs="co.aspseek.configure">
+<para>
+指出 mysql 的安装路径和设置 ASPseek 的安装路径
+</para>
+</callout>
+<callout arearefs="co.aspseek.create.db">
+<para>
+初始化 ASPseek 数据库设置。创建数据库 aspseek12，访问该数据库的用户名和口令保存在配置文件 <filename>/usr/local/aspseek/etc/db.conf</filename> 中
+</para>
+</callout>
+<callout arearefs="co.aspseek.searchd">
+<para>
+将cgi程序 s.cgi 程序拷贝到WEB服务器的cgi-bin目录中
+</para>
+</callout>
+<callout arearefs="co.aspseek.create.usr">
+<para>
+为确保系统安全，创建用户 aspseek，并使用该用户的身份，进行数据索引的维护和启动搜索引擎服务程序
+</para>
+</callout>
+<callout arearefs="co.aspseek.index">
+<para>
+以 aspseek 用户的身份，进行数据索引的维护
+</para>
+</callout>
+<callout arearefs="co.aspseek.searchd">
+<para>
+以 aspseek 用户的身份，启动搜索引擎服务程序
+</para>
+</callout>
+</calloutlist>
+
+</sect2>
+
+<sect2 id="aspseek-index"><title>数据库维护</title>
+<para>
+index 程序完成的功能包括网站爬虫、网页下载、解析、数据库维护。
+</para>
+
+<sect3><title>配置文件: aspseek.conf</title>
+<para>
+aspseek.conf 是 index 程序的配置文件，告诉 index 程序为哪个网址建立索引，如果建立索引等等。
+</para>
+
+<screen>
+Include db.conf <co id="co.aspseek.db"/>
+UtfStorage yes <co id="co.aspseek.utf"/>
+Include ucharset.conf  <co id="co.aspseek.charset"/>
+Period 1d <co id="co.aspseek.period"/>
+Server	URL <co id="co.aspseek.server"/>
+</screen>
+<calloutlist>
+<callout arearefs="co.aspseek.db">
+<para>
+包含 db.conf 配置文件，设置连接 MySQL 数据库的用户名、口令等。例如：DBAddr mysql://aspseek12:PASSWOR-IS-HERE@localhost/aspseek12/
+</para>
+</callout>
+<callout arearefs="co.aspseek.period">
+<para>
+设定网页重建索引的间隔，作用域到下一个 Period 命令或者文件结尾。对作用域内的 Server 指定的网站有效，因此可以对不同的网站设置不同的更新频率
+</para>
+</callout>
+<callout arearefs="co.aspseek.utf">
+<para>
+以 UTF-8 格式存储 MySQL 数据库中信息
+</para>
+</callout>
+<callout arearefs="co.aspseek.charset">
+<para>
+配置字符集。若需要能够对中文进行检索，需要打开 CharsetTableU2 和 Dictionary2 的配置
+</para>
+</callout>
+<callout arearefs="co.aspseek.server">
+<para>
+最重要的设置。告诉 index 为哪些网站建立索引，可通过多个 Server 配置设置多个服务器。注意：如果在URL中包含路径并不能将索引限制在该目录下，仍然会对整个网站建立索引。如果想限制某些路径，使用 Disallow 配置，例如下面的配置将对网站的索引限制在 url: http://members.aol.com/midlandsda 下。
+</para>
+<screen>
+Server http://www.aol.com/ 
+Allow ^http://members.aol.com/midlandsda 
+Disallow ^http://www.aol.com/ 
+</screen>
+</callout>
+</calloutlist>
+
+</sect3>
+
+<sect3><title>用 index 程序定期更新搜索引擎数据库</title>
+<itemizedlist>
+<listitem>
+<para>
+index -a
+</para>
+<para>
+为所有网页重新建立索引。不使用该参数，则参考配置中的 Period 参数，只对早于这个时间的网页重建索引。
+</para>
+</listitem>
+<listitem>
+<para>
+index -S
+</para>
+<para>
+显示数据库的统计信息
+</para>
+</listitem>
+<listitem>
+<para>
+通过 crontab 设置定时启动 index 重建检索
+</para>
+<screen>
+0 0 * * * su -c '/usr/local/aspseek/sbin/index' aspseek 
+</screen>
+</listitem>
+</itemizedlist>
+<note>
+<para>
+注意要以 aspseek 用户身份执行。
+</para>
+</note>
+</sect3>
+
+</sect2>
+
+<sect2 id="aspseek-searchd"><title>searchd 后台数据库检索</title>
+<para>
+searchd 是 ASPseek 的守护进程，用来接收 cgi 程序(s.cgi)的查询请求，执行查询动作（搜索由 index 程序创建的数据库），将结果反馈给 cgi 程序(s.cgi)。
+</para>
+
+<sect3><title>searchd.conf</title>
+<para>
+searchd 程序的配置文件。
+</para>
+<screen>
+# Port 12345 <co id="co.searchd.conf.port"/>
+Include db.conf <co id="co.searchd.conf.db"/>
+UtfStorage yes <co id="co.searchd.utf"/>
+Include ucharset.conf  <co id="co.searchd.charset"/>
+</screen>
+<calloutlist>
+<callout arearefs="co.searchd.conf.port">
+<para>
+设置 searchd 侦听的端口。确省为 12345
+</para>
+</callout>
+<callout arearefs="co.searchd.conf.db">
+<para>
+包含 db.conf 配置文件，设置连接 MySQL 数据库的用户名、口令等。例如：DBAddr mysql://aspseek12:PASSWOR-IS-HERE@localhost/aspseek12/
+</para>
+</callout>
+<callout arearefs="co.searchd.utf">
+<para>
+以 UTF-8 格式存储 MySQL 数据库中信息
+</para>
+</callout>
+<callout arearefs="co.searchd.charset">
+<para>
+配置字符集。若需要能够对中文进行检索，需要打开 CharsetTableU2 和 Dictionary2 的配置
+</para>
+</callout>
+</calloutlist>
+</sect3>
+
+<sect3><title>运行 searchd</title>
+<para>
+配置开机自动执行 searchd。
+</para>
+<screen>
+<![CDATA[
+#!/bin/sh
+# FileName: /etc/rc.d/rc3.d/S99aspseek
+# Script to control aspseek
+#
+
+case "$1" in
+'start')
+        echo "starting aspseek server ...  "
+        su aspseek -c "/usr/local/aspseek/sbin/searchd -D -R"
+        echo done
+        ;;
+'stop')
+        echo "stopping news server ...  "
+        killall -9 searchd
+        echo done
+        ;;
+*)
+        echo "usage: news.sh {start | stop}"
+        ;;
+esac
+]]>
+</screen>
+
+</sect3>
+
+</sect2>
+
+<sect2 id="aspseek-s.cgi"><title>s.cgi: 具有类似GOOGLE查询界面的cgi程序</title>
+<para>
+搜索引擎的界面是由 CGI 提供的。ASPseek 的CGI程序叫做 s.cgi，当然可以改成其它名字。配置则非常简单，除了要将 Apache 配置为支持 cgi 外，
+只需要将 s.cgi 从 /usr/local/aspseek/bin/ 目录下拷贝到 Apache 的 cgi-bin 目录下即可。
+配置 Apache 可能非常简单，也许一句 "ScriptAlias /cgi-bin/ /PATH/cgi-bin/" 就足够了。
+</para>
+<para>
+我感打赌，s.cgi 一下子就会抓住你的眼球，因为 s.cgi 程序提供的一流的查询界面，和伟大的 Google 太类似了，尤其是那一排字母 "e"。
+</para>
+<mediaobject>
+<imageobject>
+<imagedata fileref="images/aspseek.gif" format="GIF"/>
+</imageobject>
+<textobject>
+<phrase>ASPseek 查询界面</phrase>
+</textobject>
+<caption>
+<para>
+ASPseek 查询界面
+</para>
+</caption>
+</mediaobject>
+
+<para>
+s.cgi 还提供了定制界面的方案：只需要修改模板文件 <filename>/usr/local/aspseek/etc/s.htm</filename> 即可。下面是 s.htm 定制的示例（只显示重要的改动）：
+</para>
+<note>
+<para>
+注意：如果将 s.cgi 改名，相应的模板也需要改名。例如 cgi 改名为 search.cgi，则相应的模板文件为 search.htm。
+</para>
+</note>
+<screen>
+&lt;!--top--&gt;
+&lt;HTML&gt;
+&lt;HEAD&gt;
+  &lt;META http-equiv="Content-Type" content="text/html; charset=gb2312"&gt;  <co id="co.aspseek.tmpl.contenttype"/>
+  &lt;LINK REL="STYLESHEET" TYPE="text/css" HREF="/inc/css/main.css"/&gt; <co id="co.aspseek.tmpl.css"/>
+ &lt;title&gt;ASPseek: $Q&lt;/TITLE&gt;
+&lt;/HEAD&gt;
+&lt;BODY BGCOLOR="#FFFFFF"&gt;
+  &lt;SCRIPT language= "javascript" src="/inc/jscript/header.js" type=text/javascript&gt;&lt;/script&gt;  <co id="co.aspseek.tmpl.headerjs"/>
+
+&lt;FORM METHOD=GET ACTION="$A"&gt;
+&lt;TABLE width="100%" align="center" valign="center"&gt;
+&lt;TR&gt;
+  &lt;TD VALIGN=bottom&gt;&lt;IMG SRC="/img/aspseek-big.png" WIDTH="168" HEIGHT="66" ALT="ASPseek" BORDER="0" ALIGN="left" HSPACE="0"&gt;&lt;/TD&gt;
+  &lt;TD VALIGN=center ALIGN=center width="*"&gt;
+   &lt;INPUT TYPE="hidden" NAME="cs" VALUE="gb2312"&gt;  <co id="co.aspseek.tmpl.f.cs"/>
+   搜索 
+   &lt;INPUT TYPE="text" NAME="q" SIZE=30 VALUE=""&gt; <co id="co.aspseek.tmpl.f.q"/>
+   &lt;INPUT TYPE="submit" VALUE="查询知识库"&gt;
+  &lt;/TD&gt;
+  &lt;TD width="100"&gt;
+  &lt;/TD&gt;
+&lt;/TR&gt;
+&lt;/TABLE&gt;
+&lt;/FORM&gt;
+
+... ...
+... ...
+
+&lt;center&gt;
+&lt;script language= "javascript" src="/inc/jscript/footer.js" type=text/javascript&gt;&lt;/script&gt; <co id="co.aspseek.tmpl.footerjs"/>
+&lt;script language= "javascript"&gt; write_footer("Template: $Id: searchengine.xml,v 1.1 2004/02/03 05:24:10 jiangxin Exp $"); &lt;/script&gt; 
+&lt;/center&gt;
+
+&lt;DIV ALIGN=right&gt;
+&lt;A HREF="http://www.aspseek.org/"&gt;&lt;IMG SRC="http://www.aspseek.com/i/pow_aseek.png" WIDTH=88 HEIGHT=31 BORDER=0 ALT="Free search engine software: ASPseek $AV"&gt;&lt;/A&gt;
+&lt;/BODY&gt;
+&lt;/HTML&gt;
+&lt;!--/bottom--&gt;
+
+</screen>
+<calloutlist>
+<callout arearefs="co.aspseek.tmpl.contenttype">
+<para>
+将cgi查询的输出界面（HTML）的语言编码设置为中文
+</para>
+</callout>
+<callout arearefs="co.aspseek.tmpl.css">
+<para>
+引用外部的样式表文件，这样可以根据需要改变查询界面而尽量少的修改模板文件。一个简单的样式表示例：
+</para>
+<screen>
+p {font-size:9pt}
+h1 {font-size:20pt;line-height:130%;font-weight:"bold";align:"center";}
+td,li,select,input {font-size:9pt}
+.sect1 {font-size:9pt;line-height:150%;color:#333333;background-color:#E1E1E1;font-weight:bolder;}
+.datetime {font-size:9pt;color="red"}
+.star  {font-size:9pt;color="red"}
+.gray {font-size:9pt;color="gray"}
+.cvskw {font-size:9pt}
+.footer           {font-size:9pt;font-weight:bolder}
+.footer A:link    {font-size:9pt;font-weight:bolder}
+.footer A:active  {font-size:9pt;font-weight:bolder}
+.footer A:visited {font-size:9pt;font-weight:bolder}
+.footer A:hover   {font-size:9pt;font-weight:bolder}
+A:link {color: #000000;}
+A:visited {color: #000000;}
+A:active,A:hover {color : #000000}
+HTML BODY { LINE-HEIGHT: 1.2; MARGIN: 0 0 2em 0 }
+UL { list-style-image: url("/images/dot.gif") }
+
+.em           {font-size:"9pt";color="red";font-weight:"bolder";font-style:"normal";letter-spacing:"2px";}
+.em A:link    {color: "red";letter-spacing:"4px";}
+.em A:active  {color: "red";letter-spacing:"4px";}
+.em A:visited {color: "red";letter-spacing:"4px";}
+.em A:hover   {color: "red";letter-spacing:"4px";font-size:"12pt";}
+</screen>
+</callout>
+<callout arearefs="co.aspseek.tmpl.headerjs">
+<para>
+引用外部 javascript，显示头部信息，避免过多对该模板的修改。一个 header.js 示例：
+</para>
+<screen>
+&lt;!--
+document.write("      &lt;table width=750 border=0 cellspacing=0 cellpadding=0&gt;");
+document.write("        &lt;tr valign=bottom&gt;");
+document.write("      	&lt;td width='*'&gt;");
+document.write("      	  &lt;table width='100%' height=50 border=0 cellspacing=0 cellpadding=0&gt;");
+document.write("            &lt;tr&gt;");
+document.write("              &lt;td align='center' valign='center'&gt;&lt;h1&gt;&lt;A HREF='/'&gt;Johnson's Homepage&lt;/A&gt;&lt;/h1&gt;&lt;/td&gt;");
+document.write("            &lt;/tr&gt;");
+document.write("      	  &lt;/table&gt;");
+document.write("        &lt;/td&gt;&lt;/tr&gt;");
+document.write("      &lt;/table&gt;");
+//--&gt;
+</screen>
+</callout>
+<callout arearefs="co.aspseek.tmpl.f.cs">
+<para>
+通过设置cgi的cs字段，用以支持中文查询
+</para>
+</callout>
+<callout arearefs="co.aspseek.tmpl.f.q">
+<para>
+q 是真正的查询字段。看看 GOOGLE 的查询网页，看看是不是非常类似？
+</para>
+</callout>
+<callout arearefs="co.aspseek.tmpl.footerjs">
+<para>
+引用外部 javascript，显示脚注信息，避免过多对该模板的修改。一个 footer.js 示例：
+</para>
+<screen>
+&lt;!--
+function write_footer($str)
+{
+	document.write("      &lt;TABLE align='center' border='0' cellpadding='0' cellspacing='0' width='750'&gt;");
+	document.write("        &lt;TR&gt;");
+	document.write("          &lt;td align=center&gt;");
+	document.write("          &lt;hr&gt;");
+	if ($str)
+		document.write("&lt;font class='cvskw'&gt;" + $str + "&lt;/font&gt;&lt;br&gt;");
+	document.write("          &lt;font class='footer'&gt;CopyLeft 2003, &lt;a href='mailto:johnson.AT.worldhello.net'&gt;Johnson&lt;/a&gt;&lt;/font&gt;&lt;br&gt;");
+	document.write("          &lt;/td&gt;");
+	document.write("        &lt;/TR&gt;");
+	document.write("      &lt;/TABLE&gt;");
+}
+//--&gt;
+</screen>
+</callout>
+</calloutlist>
+</sect2>
+
+<sect2><title>ASPseek对中文的支持</title>
+<para>
+中文、日文、韩文等多字节文字不同于英文等单字节语言，是多字节语言。我们都知道英文是依靠空格和标点符号将单词分割开，搜索引擎只要依据空格和标点就可以分割出词表。对一些检索意义不大的单词，则将这些词列在所谓 stopwords 词表（又称为 badwords中），如: "a, an, and, the, ..."，避免因为对这些词建立检索而耗费过多的资源。这些 stopwords 保存在目录 /usr/local/aspseek/etc/stopwords/ 中。
+</para>
+<para>
+而中文则不能造此办理，没有空格开区分词和词组，因此需要建立相应的词表。这些词表保存在目录 /usr/local/aspseek/etc/tables/ 中。
+</para>
+<para>
+为能够对中文文档进行检索，需要检查是否在配置文件 aspseek.conf 和 searchd.conf 配置了 "CharsetTableU2" 和 "Dictionary2"选项。这两个选项是在配置文件 ucharset.conf 中定义的，用语句 "Include ucharset.conf" 包含入配置文件 aspseek.conf 和 searchd.conf。 ucharset.conf 中"CharsetTableU2" 和 "Dictionary2"的配置如下：
+</para>
+<screen>
+<![CDATA[
+########################################################################
+# Unicode charset definition for multibyte charsets
+# (please comment all not needed charsets):
+# CharsetTableU2 <charset> <lang> <table> [<lang_map>]
+#
+CharsetTableU2 big5 ch tables/big5.txt
+CharsetTableU2 gb2312 ch tables/gb2312.txt
+
+########################################################################
+# Dictionary for tokenizing of text in Chinese, Japanese and Korean languages
+# Dictionary2 <lang> <file> [<file encoding>]
+# If file encoding is omitted, then file is assumed to be in unicode
+# Must be set after encoding definition (CharsetTableU2)
+# <lang> parameter must match <lang> in CharsetTableU2 directive.
+Dictionary2 ch tables/chinese.txt big5
+]]>
+</screen>
+</sect2>
+
+</sect1>

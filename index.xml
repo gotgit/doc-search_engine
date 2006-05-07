@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE article PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"   
+	"http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd" [
+<!ENTITY author "<ulink url='mailto:johnson.AT.worldhello.net'>Johnson</ulink>">
+<!ENTITY orgname "<ulink url='http://www.worldhello.net'>worldhello.net</ulink>">
+<!ENTITY sect1    SYSTEM "webarchive.xml">
+<!ENTITY sect2    SYSTEM "searchengine.xml">
+<!ENTITY % vers   SYSTEM "version.xml">
+%vers;
+]>
+<article id="index">
+<articleinfo>
+<title>知识管理</title>
+<subtitle>搜索引擎 Howto</subtitle>
+<author><firstname>鑫</firstname><surname>蒋</surname></author>
+<affiliation>
+<orgname>&orgname;</orgname>
+<address><email>johnson.AT.worldhello.net</email></address>
+</affiliation>
+<revhistory>
+<!--revision>
+<revnumber>$Revision: 1.3 $</revnumber>
+<date>$Date: 2004/02/03 05:28:12 $</date>
+<authorinitials>$Author: jiangxin $</authorinitials>
+<revremark>...</revremark>
+</revision-->
+<revision>
+<revnumber>1.1</revnumber>
+<date>2003/11/7</date>
+<authorinitials>jiangxin</authorinitials>
+<revremark><link linkend="mhonarc-custom">完善 MHonArc 模板</link></revremark>
+</revision>
+<revision>
+<revnumber>1.0</revnumber>
+<date>2003/06/08</date>
+<authorinitials>jiangxin</authorinitials>
+<revremark>新闻到网页的转换和搜索引擎。</revremark>
+</revision>
+</revhistory>
+<abstract>
+<para>
+没有全文检索，企业内部的知识管理系统就不能成为成功的系统。构建一个企业内部的 GOOGLE，将内部资源一网打尽。首先介绍使用 MHonArc 将企业的news、maillist、email转换为网页，再介绍搜索引擎的配置。
+</para>
+<para>
+（编译自版本: &doc.revision;，最后更新时间: &doc.lastchange;）
+</para>
+</abstract>
+</articleinfo>
+
+&sect1;
+
+&sect2;
+
+</article>
