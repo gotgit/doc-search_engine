@@ -322,7 +322,7 @@ s.cgi 还提供了定制界面的方案：只需要修改模板文件 <filename>
 
 &lt;center&gt;
 &lt;script language= "javascript" src="/inc/jscript/footer.js" type=text/javascript&gt;&lt;/script&gt; <co id="co.aspseek.tmpl.footerjs"/>
-&lt;script language= "javascript"&gt; write_footer("Template: $Id: searchengine.xml,v 1.1 2004/02/03 05:24:10 jiangxin Exp $"); &lt;/script&gt; 
+&lt;script language= "javascript"&gt; write_footer("Template: $Id$"); &lt;/script&gt; 
 &lt;/center&gt;
 
 &lt;DIV ALIGN=right&gt;
